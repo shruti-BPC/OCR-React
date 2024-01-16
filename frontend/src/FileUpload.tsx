@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 
 const FileUpload: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<{ text: string; category: string } | null>(null);
+  const [files, setFiles] = useState<File | null>(null);
+  const [result, setResult] = useState<{ text: string; category: string }[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
+      setFiles(event.target.files[0]);
     }
   };
 
   const handleUpload = async () => {
-    if (file) {
-        setLoading(true); // Set loading to true when upload starts
+    if (files) {
+        setLoading(true);
         const formData = new FormData();
-        formData.append('file', file);
-
+        formData.append('file', files);
+        formData.append('fileType', files.type);
       try {
         const response = await fetch('http://localhost:5000/api/categorize', {
           method: 'POST',
@@ -27,12 +27,13 @@ const FileUpload: React.FC = () => {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const data = await response.json(); // Parse JSON from the response
-        setResult(data);
+        const data = await response.json();
+        console.log(data);
+        setResult([data]); // Make it an array
       } catch (error) {
         console.error('Error uploading file:', error);
       } finally {
-        setLoading(false); // Set loading to false when upload is complete
+        setLoading(false);
       }
     }
   };
@@ -41,7 +42,7 @@ const FileUpload: React.FC = () => {
     <div>
       <h2>File Upload</h2>
       <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload} disabled={!file}>
+      <button onClick={handleUpload} disabled={!files}>
         Upload
       </button>
       {loading && <p>Loading...</p>}
@@ -49,8 +50,12 @@ const FileUpload: React.FC = () => {
         <div>
           <h3>Categorized Result</h3>
           <ul>
-            <b>Category: {`${result.category}`}</b><br></br>
-            <b>Text:</b> {`${result.text} `}
+            {result.map((item, index) => (
+              <li key={index}>
+                <b>Category:</b> {item.category} <br />
+                <b>Text:</b> {item.text}
+              </li>
+            ))}
           </ul>
         </div>
       )}
